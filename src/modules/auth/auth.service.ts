@@ -1,4 +1,8 @@
-import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -23,10 +27,16 @@ export class AuthService {
     }
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepository.create({ email: dto.email, password: hashed });
+    const user = this.userRepository.create({
+      email: dto.email,
+      password: hashed,
+    });
     await this.userRepository.save(user);
 
-    return { message: 'Registration successful. Please verify your email before logging in.' };
+    return {
+      message:
+        'Registration successful. Please verify your email before logging in.',
+    };
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -45,7 +55,9 @@ export class AuthService {
   }
 
   async me(userId: string): Promise<Omit<User, 'password'>> {
-    const user = await this.userRepository.findOneOrFail({ where: { id: userId } });
+    const user = await this.userRepository.findOneOrFail({
+      where: { id: userId },
+    });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...rest } = user;
     return rest;
