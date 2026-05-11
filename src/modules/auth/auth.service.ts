@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -14,7 +14,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<{ accessToken: string }> {
+  async register(dto: RegisterDto): Promise<{ message: string }> {
     const existing = await this.userRepository.findOne({
       where: { email: dto.email },
     });
@@ -26,7 +26,7 @@ export class AuthService {
     const user = this.userRepository.create({ email: dto.email, password: hashed });
     await this.userRepository.save(user);
 
-    return this.signToken(user);
+    return { message: 'Registration successful. Please verify your email before logging in.' };
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -38,6 +38,9 @@ export class AuthService {
   }
 
   login(user: User): { accessToken: string } {
+    if (!user.isVerified) {
+      throw new ForbiddenException('Email not verified');
+    }
     return this.signToken(user);
   }
 
@@ -49,7 +52,7 @@ export class AuthService {
   }
 
   private signToken(user: User): { accessToken: string } {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     return { accessToken: this.jwtService.sign(payload) };
   }
 }
