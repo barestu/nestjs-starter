@@ -17,6 +17,7 @@ import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { SetupModule } from './modules/setup/setup.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { UsersModule } from './modules/users/users.module';
     StorageModule,
     AuthModule,
     HealthModule,
+    SetupModule,
     UsersModule,
   ],
   controllers: [AppController],
