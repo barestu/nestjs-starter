@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -8,6 +8,7 @@ import { User } from '../../database/entities/user.entity';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,5 +37,19 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: User) {
     return this.authService.me(user.id);
+  }
+
+  @ApiOperation({ summary: 'Verify email with token from link' })
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Get('verify-email')
+  verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @ApiOperation({ summary: 'Resend verification email' })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto.email);
   }
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,8 +7,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -16,6 +19,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
@@ -31,7 +35,8 @@ export class AuthService {
       email: dto.email,
       password: hashed,
     });
-    await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    await this.sendVerificationEmail(saved);
 
     return {
       message:
@@ -61,6 +66,52 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...rest } = user;
     return rest;
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { verificationToken: token },
+    });
+
+    if (
+      !user ||
+      !user.verificationTokenExpiry ||
+      user.verificationTokenExpiry < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
+    await this.userRepository.save(user);
+
+    return { message: 'Email verified successfully' };
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('No account with that email');
+    }
+    if (user.isVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    await this.sendVerificationEmail(user);
+    return { message: 'Verification email sent' };
+  }
+
+  private async sendVerificationEmail(user: User): Promise<void> {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 24);
+
+    user.verificationToken = token;
+    user.verificationTokenExpiry = expiry;
+    await this.userRepository.save(user);
+
+    await this.mailService.sendVerificationEmail(user.email, token);
   }
 
   private signToken(user: User): { accessToken: string } {

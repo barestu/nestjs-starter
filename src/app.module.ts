@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
+import { MailModule } from './modules/mail/mail.module';
 import { SharedModule } from './modules/shared/shared.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { SharedModule } from './modules/shared/shared.module';
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     SharedModule,
+    MailModule,
     AuthModule,
   ],
   controllers: [AppController],
