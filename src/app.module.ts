@@ -8,8 +8,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
@@ -36,8 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     SetupModule,
     UsersModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
