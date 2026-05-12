@@ -27,6 +27,12 @@ export class User {
   @Column({ nullable: true, type: 'timestamp' })
   verificationTokenExpiry: Date | null;
 
+  @Column({ nullable: true, type: 'varchar' })
+  resetPasswordToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  resetPasswordTokenExpiry: Date | null;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 

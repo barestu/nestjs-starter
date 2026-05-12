@@ -102,6 +102,47 @@ export class AuthService {
     return { message: 'Verification email sent' };
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 1);
+
+      user.resetPasswordToken = token;
+      user.resetPasswordTokenExpiry = expiry;
+      await this.userRepository.save(user);
+
+      await this.mailService.sendPasswordResetEmail(user.email, token);
+    }
+
+    return { message: 'If that email exists, a reset link was sent' };
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { resetPasswordToken: token },
+    });
+
+    if (
+      !user ||
+      !user.resetPasswordTokenExpiry ||
+      user.resetPasswordTokenExpiry < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordTokenExpiry = null;
+    await this.userRepository.save(user);
+
+    return { message: 'Password reset successfully' };
+  }
+
   private async sendVerificationEmail(user: User): Promise<void> {
     const token = crypto.randomBytes(32).toString('hex');
     const expiry = new Date();
