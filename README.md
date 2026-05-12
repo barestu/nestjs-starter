@@ -1,6 +1,6 @@
 # NestJS Starter
 
-Production-ready NestJS boilerplate with Postgres, JWT auth, RBAC, and TypeORM migrations.
+Production-ready NestJS boilerplate with Postgres, JWT auth, email verification, password reset, RBAC, and TypeORM migrations.
 
 ## Stack
 
@@ -8,6 +8,7 @@ Production-ready NestJS boilerplate with Postgres, JWT auth, RBAC, and TypeORM m
 - **PostgreSQL** + **TypeORM** — database, schema managed via migrations (no `synchronize`)
 - **Passport JWT** — authentication
 - **RBAC** — role-based access control (`admin` / `user`)
+- **Nodemailer** + **Handlebars** — transactional email with templates
 - **Helmet** + **CORS** + **Throttler** — security defaults
 - **Swagger** — optional API docs
 - **class-validator** — request validation
@@ -36,6 +37,14 @@ DB_NAME=nestjs_starter
 JWT_SECRET=your-secret
 JWT_EXPIRES_IN=7d
 
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=you@example.com
+SMTP_PASSWORD=secret
+SMTP_FROM="App <noreply@example.com>"
+
+FRONTEND_URL=http://localhost:3000
+
 # Optional
 CORS_ORIGIN=*
 ENABLE_SWAGGER=true
@@ -53,17 +62,10 @@ pnpm dev
 Schema is managed exclusively via migrations. `synchronize` is always `false`.
 
 ```bash
-# Generate migration from entity changes
-pnpm migration:generate <MigrationName>
-
-# Apply pending migrations
-pnpm migration:run
-
-# Revert last migration
-pnpm migration:revert
-
-# List pending migrations
-pnpm migration:show
+pnpm migration:generate <MigrationName>  # generate from entity changes
+pnpm migration:run                        # apply pending
+pnpm migration:revert                     # revert last
+pnpm migration:show                       # list pending
 ```
 
 Migration files live in `src/database/migrations/`.
@@ -72,38 +74,29 @@ Migration files live in `src/database/migrations/`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/auth/register` | Public | Register new user |
-| POST | `/api/auth/login` | Public | Login, returns JWT |
+| POST | `/api/auth/register` | Public | Register; sends verification email |
+| POST | `/api/auth/login` | Public | Login; returns JWT (requires verified email) |
 | GET | `/api/auth/me` | JWT | Current user profile |
+| GET | `/api/auth/verify-email?token=` | Public | Verify email (token expires 24h) |
+| POST | `/api/auth/resend-verification` | Public | Resend verification email |
+| POST | `/api/auth/forgot-password` | Public | Send password reset email |
+| POST | `/api/auth/reset-password` | Public | Reset password (token expires 1h) |
 
 Swagger docs available at `/api/docs` when `ENABLE_SWAGGER=true`.
 
 ## Testing
 
 ```bash
-# Unit tests
-pnpm test
-
-# Watch mode
-pnpm test:watch
-
-# Coverage
-pnpm test:cov
-
-# E2E
-pnpm test:e2e
+pnpm test        # unit tests
+pnpm test:watch  # watch mode
+pnpm test:cov    # coverage
+pnpm test:e2e    # e2e
 ```
 
 ## Production
 
 ```bash
 pnpm build
-pnpm start:prod
-```
-
-Run migrations before starting in production:
-
-```bash
 pnpm migration:run
-node dist/main
+pnpm start:prod
 ```
