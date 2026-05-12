@@ -16,7 +16,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   if (process.env.ENABLE_SWAGGER === 'true') {
     const config = new DocumentBuilder()
